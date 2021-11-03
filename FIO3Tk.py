@@ -13,7 +13,6 @@ import datetime
 import glob
 import os
 import shutil
-import sqlite3
 import tkinter as tk
 from tkinter import *
 from tkinter import messagebox
@@ -25,7 +24,7 @@ class mainWindow(Frame):
         Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.parent.title("File Transfer Process")
-        self.parent.geometry("500x400")
+        self.parent.geometry("")
         arg = self.parent
         self.initialize()
 
@@ -39,11 +38,8 @@ class mainWindow(Frame):
         self.copyTextLabel.grid(column=0, row=1)
 
 
-        # Get the last row of the table
-        lastRowA = getLastRow()
-
         # Display the last date and time files were transferred
-        self.lastTransferDate = tk.Label(self, anchor="w", text = lastRowA[1], width=33)
+        self.lastTransferDate = tk.Label(self, anchor="w", text = "24 hours", width=33)
         self.lastTransferDate.grid(column=1, row=1)
         
 
@@ -61,12 +57,12 @@ class mainWindow(Frame):
         self.destFolderLabel = tk.Label(self, anchor="e", text="Destination Folder:", width=22)
         self.destFolderLabel.grid(column=0, row=3)
         self.destFolderText = tk.Text(self, state="disabled", width=30, height=1)
-        self.destFoldertext.grid(column=1, row=3)
+        self.destFolderText.grid(column=1, row=3)
         self.destBrowseButton = tk.Button(self, text="Browse", command=self.destBrowse)
-        self.destBrowseButton.grid(column=0, row=4, columnspan=3, pady=5)
+        self.destBrowseButton.grid(column=2, row=3, columnspan=3, pady=5)
 
         # Copy button element
-        self.copyFilesbutton = tk.Button(self, text="Copy Files", command=self.copyFiles)
+        self.copyFilesButton = tk.Button(self, text="Copy Files", command=self.copyFiles)
         self.copyFilesButton.grid(column=0, row=4, columnspan=3, pady=5)
 
 
@@ -77,7 +73,7 @@ class mainWindow(Frame):
 
         # The event to help select the source folder
         dlg = tk.filedialog.askdirectory(parent=self, initialdir="/", title="Choose the Source Folder:")
-        
+        print(dlg)
         if len(dlg) > 0:
             self.destFolderText.config(state="normal")
             self.destFolderText.delete('1.0', 'end')
@@ -90,12 +86,12 @@ class mainWindow(Frame):
         Select a Destinaton Folder to copy the files to
         '''
         
-        dlg = tk.filedialog.askdirectory(parent=self, initialdir="/", title="Choose Destinaton Folder:")
-        print(dlg)
-        if len(dlg) > 0:
+        dlg2 = tk.filedialog.askdirectory(parent=self, initialdir="/", title="Choose Destinaton Folder:")
+        print(dlg2)
+        if len(dlg2) > 0:
             self.destFolderText.config(state="normal")
             self.destFolderText.delete('1.0', 'end')
-            self.destFolderText.insert('1.0', dlg)
+            self.destFolderText.insert('1.0', dlg2)
             self.destFolderText.config(state="disabled")
 
 
@@ -108,18 +104,10 @@ class mainWindow(Frame):
 
         fileType = ".txt"
 
-        # Get the last row in the database
-        lastRowB = getLastRow()
-
-        id = lastRowB[0] + 1
-        dtLastDateTime = datetime.datetime.strptime(lastRowB[1], "%m-%d-%Y %H:%M:%S")
 
         # Create list of text filenames in source folder
         fileList = glob.glob(sourcePath + "*" + fileType)
 
-        # Connect to database
-        conn = sqlite3.connect("copied_text_files.db")
-        c = conn.cursor()
 
 
         for file in fileList:
@@ -137,24 +125,10 @@ class mainWindow(Frame):
         # Insert new row into the database
         todaysDate = datetime.datetime.today().strftime("%m-%d-%Y %H:%M:%S")
         
-        c.execute("INSERT INTO DateTime VALUES(?,?)",(id, todaysDate))
-        conn.commit()
-        conn.close()
 
 
         # Update GUI with new date and time
         self.lastTransferDate.config(text=todaysDate)
-
-
-def getLastRow():
-    # Get the last date and time the files were copied
-
-    conn = sqlite3.connect("copied_text_files.db")
-    c = conn.cursor()
-    c.execute("SELECT * FROM DateTime WHERE ID = (SELECT MAX(ID) FROM DateTime)")
-    row = c.fetchone()
-    conn.close()
-    return row
 
 
 if __name__=="__main__":
